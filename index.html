@@ -1,0 +1,297 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+    <style type="text/css">
+        .wrapper {
+            height: 15vh;
+            /*This part is important for centering*/
+            place-items: center;
+            width: 630px;
+            margin: 0px auto;
+            margin-top: 120px;
+            margin-bottom: 120px;
+        }
+
+        .typing-demo {
+            width: 100%;
+            animation: typing 2s steps(22), blink .5s step-end infinite alternate;
+            white-space: initial;
+            word-wrap: break-word;
+            overflow: hidden;
+            border-right: 3px solid;
+            font-family: monospace;
+            font-size: 2em;
+        }
+
+        #typed {
+            white-space: initial;
+            word-wrap: break-word;
+            font-family: monospace;
+            font-size: 2em;
+        }
+
+        /* the above is for styling puposes only */
+        .typed-cursor{
+            opacity: 1;
+            -webkit-animation: blink 0.7s infinite;
+            -moz-animation: blink 0.7s infinite;
+            animation: blink 0.7s infinite;
+            font-size: 2em;
+        }
+
+        @keyframes blink{
+            0% { opacity:1; }
+            50% { opacity:0; }
+            100% { opacity:1; }
+        }
+        /* <!-- answer option has border of box and text inside, when hover will have border lights-->*/
+        /* 4 option in two row, 1 vertical row for 2 horizontal column (flex) */
+
+        #quiz-section {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            animation: fadeIn 1.8s;
+        }
+
+        @keyframes fadeIn {
+            0% {
+                opacity: 0;
+            }
+            100% {
+                opacity: 1;
+            }
+        }
+
+        .quiz {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin: 10px;
+            padding: 50px;
+            border: 1px solid #000 !important;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 1.4em;
+            border-style: none;
+            outline: none;
+            width: 300px;
+            height: 60px;
+            /* flex: 50%; */
+        }
+
+        .quiz label {
+            outline: none;
+        }
+
+        .quiz:after {
+            content: '';
+            display: table;
+            clear: both;
+        }
+
+        .quiz:hover {
+            border: 1px solid #f00;
+        }
+
+        .quiz input {
+            display: none;
+        }
+
+        .quiz label {
+            cursor: pointer;
+        }
+
+        .quiz input:checked + label {
+            color: #f00;
+        }
+
+        .quiz input:checked + label::before {
+            content: '✔';
+            color: #f00;
+            font-size: 1.5em;
+            margin-right: 10px;
+        }
+
+        .quiz input:checked + label {
+            color: #f00;
+        }
+
+        .quiz input:checked + label::before {
+            content: '✔';
+            color: #f00;
+            font-size: 1.5em;
+            margin-right: 10px;
+        }
+
+        .quiz input:checked + label {
+            color: #f00;
+        }
+
+        .row {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .active {
+            border: 1px solid #f00;
+        }
+
+        .score {
+            position: fixed;
+            top: 0;
+            right: 0;
+            padding: 10px;
+            background-color: #333333;
+            color: #fff;
+        }
+
+    </style>
+</head>
+<body>
+    <!-- score bar -->
+    <div class="score">
+        <span id="score-text"></span>
+    </div>
+
+    <div class="wrapper">
+        <span id="typed" class="typed"></span>
+    </div>
+    <div id="quiz-section">
+        <div class="row">
+            <!-- answer option has border of box and text inside, when hover will have border lights-->
+            <div class="quiz">
+                <input type="checkbox" name="answer" value="A" id="A">
+                <label for="A">A. Option A</label>
+            </div>
+            <div class="quiz">
+                <input type="checkbox" name="answer" value="B" id="B">
+                <label for="B">B. Option B</label>
+            </div>
+        </div>
+        <div class="row">
+            <div class="quiz">
+                <input type="checkbox" name="answer" value="C" id="C">
+                <label for="C">C. Option C</label>
+            </div>
+            <div class="quiz">
+                <input type="checkbox" name="answer" value="D" id="D">
+                <label for="D">D. Option D</label>
+            </div>
+        </div>
+    </div>
+    <script src="./jquery.min.js"></script>
+    <script src="./typed.min.js"></script>
+    <script>
+        let total = 4;
+        let score = 0;
+        const scoreText = document.getElementById('score-text');
+        scoreText.innerText = `Score: ${score} / ${total}`;
+        
+        let currentAnswer = 'C';
+
+        const quizRequest = async () => {
+            // http request GET to localhost:5000/quiz
+            return await (await fetch('http://localhost:8080/quiz', {
+                method: 'GET',
+                headers: {
+                    'Content-Type': 'application/json'
+                }
+            })).json()
+        }
+
+        const generateNewQuiz = async () => {
+            document.getElementById('quiz-section').style.display = 'none';
+            document.querySelectorAll('.quiz').forEach(function(quiz){
+                quiz.querySelector('input').checked = false;
+                quiz.classList.remove('active');
+            });
+
+            const quiz = document.querySelector('.quiz');
+            const data = JSON.parse(await quizRequest());
+
+            console.log(data)
+
+            $("#typed").typed('reset');
+            
+            $("#typed").typed({
+                strings: [`Quesion: <br /><br />${data.content}`],
+                typeSpeed: 40,
+                startDelay: 0,
+                // backSpeed: 60,
+                // backDelay: 2000,
+                // loop: true,
+                cursorChar: "|",
+                contentType: 'html',
+                callback: function() {
+                    document.getElementById('quiz-section').style.display = 'flex';
+                    // modify for A, B, C, D
+                    document.querySelector('input[value="A"] + label').innerText = `A. ${data.quiz['A']}`;
+                    document.querySelector('input[value="B"] + label').innerText = `B. ${data.quiz['B']}`;
+                    document.querySelector('input[value="C"] + label').innerText = `C. ${data.quiz['C']}`;
+                    document.querySelector('input[value="D"] + label').innerText = `D. ${data.quiz['D']}`;
+                },
+            });
+
+            currentAnswer = data.answer;
+        }
+
+        
+
+        const onAnswer = (answer) => {
+            if(answer == currentAnswer){
+                score++;
+            }
+            scoreText.innerText = `Score: ${score} / ${total}`;
+        }
+
+
+        const selectQuiz = (quiz) => {
+            console.log(quiz);
+            quiz.querySelector('input').checked = !quiz.querySelector('input').checked;
+            console.log(quiz.querySelector('input').checked);
+            document.querySelectorAll('.quiz').forEach(function(quiz){
+                if(quiz.querySelector('input').checked) {
+                    // add class active to the selected quiz
+                    quiz.classList.add('active');
+                    onAnswer(quiz.querySelector('input').value);
+                    return;
+                }
+                quiz.classList.remove('active');
+            });
+        }
+        
+        // if quiz selected, will be checked and let div border have border color
+        document.querySelectorAll('.quiz').forEach(function(quiz){
+            quiz.addEventListener('click', function(){
+                selectQuiz(quiz);
+            });
+        });
+
+        // on keypress to select the answer
+        document.addEventListener('keypress', function(e){
+            if(e.key == 'a' || e.key == 'A'){
+                selectQuiz(document.querySelector('.quiz:has(input[value="A"])'));
+            }else if(e.key == 'b' || e.key == 'B'){
+                selectQuiz(document.querySelector('.quiz:has(input[value="B"])'));
+            }else if(e.key == 'c' || e.key == 'C'){
+                selectQuiz(document.querySelector('.quiz:has(input[value="C"])'));
+            }else if(e.key == 'd' || e.key == 'D'){
+                selectQuiz(document.querySelector('.quiz:has(input[value="D"])'));
+            }else if(e.key == 'p' || e.key == 'P'){
+                document.querySelectorAll('.quiz').forEach(function(quiz){
+                    quiz.querySelector('input').checked = false;
+                    quiz.classList.remove('active');
+                });
+            }else if(e.key == 'g' || e.key == 'G'){
+                generateNewQuiz();
+            }
+        });
+    </script>
+</body>
+</html>
