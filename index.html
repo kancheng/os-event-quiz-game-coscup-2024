@@ -5,6 +5,10 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Document</title>
     <style type="text/css">
+        * {
+            font-family: monospace;
+        }
+
         .wrapper {
             height: 15vh;
             /*This part is important for centering*/
@@ -106,30 +110,42 @@
             cursor: pointer;
         }
 
-        .quiz input:checked + label {
+        .quiz.correct input:checked + label {
             color: #f00;
         }
 
-        .quiz input:checked + label::before {
+        .quiz.correct input:checked + label::before {
             content: '✔';
+            color: #00a500;
+            font-size: 1.5em;
+            margin-right: 10px;
+        }
+
+        .quiz.correct input:checked + label {
+            color: #00a500;
+        }
+        
+        .quiz.wrong input:checked + label {
+            color: #f00;
+        }
+
+        .quiz.wrong input:checked + label::before {
+            content: '✘';
             color: #f00;
             font-size: 1.5em;
             margin-right: 10px;
         }
 
-        .quiz input:checked + label {
+        .quiz.wrong input:checked + label {
             color: #f00;
         }
 
-        .quiz input:checked + label::before {
-            content: '✔';
-            color: #f00;
-            font-size: 1.5em;
-            margin-right: 10px;
+        .selected.correct {
+            border: 3px solid #00a500 !important;
         }
 
-        .quiz input:checked + label {
-            color: #f00;
+        .selected.wrong {
+            border: 3px solid #f00 !important;
         }
 
         .row {
@@ -151,16 +167,67 @@
             color: #fff;
         }
 
+
+        .cont {
+            text-align: center;
+        }
+
+        .celebrate-btn {
+            background-color: var(--primary-color);
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            font-size: 18px;
+            font-weight: 600;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: background-color 0.3s ease, transform 0.1s ease;
+        }
+
+        .celebrate-btn:hover {
+            background-color: #C71729;
+        }
+
+        .celebrate-btn:active {
+            transform: scale(0.98);
+        }
+
+        .logo {
+            position: absolute;
+            top: 30px;
+            left: 30px;
+        }
+        .logo .l1 {
+            width: 190px;
+        }
+        .logo .p1 {
+            font-size: 1.5em;
+        }
+        .logo .p2 {
+            font-size: 1.2em;
+            margin-top: 0;
+            position: relative;
+            left: 5px;
+        }
+        .logo .l2 {
+            width: 160px;
+        }
     </style>
 </head>
 <body>
+    <div class="logo">
+        <img class="l1" src="./xxxx.svg" />
+        <p class="p1">title</p>
+        <img class="l2" src="./xxxx.png" />
+        <p class="p2">group link</p>
+    </div>
     <!-- score bar -->
     <div class="score">
         <span id="score-text"></span>
     </div>
 
     <div class="wrapper">
-        <span id="typed" class="typed"></span>
+        <span id="typed" class="typed">点击任意键开始</span>
     </div>
     <div id="quiz-section">
         <div class="row">
@@ -185,19 +252,22 @@
             </div>
         </div>
     </div>
+    <script src="./confetti.browser.min.js"></script>
     <script src="./jquery.min.js"></script>
     <script src="./typed.min.js"></script>
     <script>
-        let total = 4;
+        let model_name = "llama3-8b-8192";
+        let total = 1;
         let score = 0;
+        let isAnswered = true;
         const scoreText = document.getElementById('score-text');
-        scoreText.innerText = `Score: ${score} / ${total}`;
+        scoreText.innerText = `Score: ${score} / ${total} (${model_name})`;
         
         let currentAnswer = 'C';
 
         const quizRequest = async () => {
             // http request GET to localhost:5000/quiz
-            return await (await fetch('http://localhost:8080/quiz', {
+            return await (await fetch('http://localhost:5000/quiz', {
                 method: 'GET',
                 headers: {
                     'Content-Type': 'application/json'
@@ -206,64 +276,86 @@
         }
 
         const generateNewQuiz = async () => {
-            document.getElementById('quiz-section').style.display = 'none';
-            document.querySelectorAll('.quiz').forEach(function(quiz){
-                quiz.querySelector('input').checked = false;
-                quiz.classList.remove('active');
-            });
+            try {
+                currentAnswer = ''
+                document.getElementById('quiz-section').style.display = 'none';
+                document.querySelectorAll('.quiz').forEach(function(quiz){
+                    quiz.querySelector('input').checked = false;
+                    quiz.classList.remove('active');
+                });
 
-            const quiz = document.querySelector('.quiz');
-            const data = JSON.parse(await quizRequest());
+                const quiz = document.querySelector('.quiz');
+                const data = JSON.parse(await quizRequest());
 
-            console.log(data)
+                console.log(data)
 
-            $("#typed").typed('reset');
-            
-            $("#typed").typed({
-                strings: [`Quesion: <br /><br />${data.content}`],
-                typeSpeed: 40,
-                startDelay: 0,
-                // backSpeed: 60,
-                // backDelay: 2000,
-                // loop: true,
-                cursorChar: "|",
-                contentType: 'html',
-                callback: function() {
-                    document.getElementById('quiz-section').style.display = 'flex';
-                    // modify for A, B, C, D
-                    document.querySelector('input[value="A"] + label').innerText = `A. ${data.quiz['A']}`;
-                    document.querySelector('input[value="B"] + label').innerText = `B. ${data.quiz['B']}`;
-                    document.querySelector('input[value="C"] + label').innerText = `C. ${data.quiz['C']}`;
-                    document.querySelector('input[value="D"] + label').innerText = `D. ${data.quiz['D']}`;
-                },
-            });
+                $("#typed").typed('reset');
+                
+                $("#typed").typed({
+                    strings: [`Quesion: <br /><br />${data.content}`],
+                    typeSpeed: 40,
+                    startDelay: 0,
+                    // backSpeed: 60,
+                    // backDelay: 2000,
+                    // loop: true,
+                    cursorChar: "|",
+                    contentType: 'html',
+                    callback: function() {
+                        document.getElementById('quiz-section').style.display = 'flex';
+                        // modify for A, B, C, D
+                        document.querySelector('input[value="A"] + label').innerText = `A. ${data.quiz['A']}`;
+                        document.querySelector('input[value="A"]').parentElement.className = `quiz ${data.answer == "A" ? "correct" : "wrong"}`;
+                        document.querySelector('input[value="B"] + label').innerText = `B. ${data.quiz['B']}`;
+                        document.querySelector('input[value="B"]').parentElement.className = `quiz ${data.answer == "B" ? "correct" : "wrong"}`;
+                        document.querySelector('input[value="C"] + label').innerText = `C. ${data.quiz['C']}`;
+                        document.querySelector('input[value="C"]').parentElement.className = `quiz ${data.answer == "C" ? "correct" : "wrong"}`;
+                        document.querySelector('input[value="D"] + label').innerText = `D. ${data.quiz['D']}`;
+                        document.querySelector('input[value="D"]').parentElement.className = `quiz ${data.answer == "D" ? "correct" : "wrong"}`;
+                    },
+                });
 
-            currentAnswer = data.answer;
+                currentAnswer = data.answer;
+                isAnswered = false;
+                total ++;
+            }catch(e) {
+                console.log("Something wrong, please try again", e)
+            }
         }
-
-        
 
         const onAnswer = (answer) => {
             if(answer == currentAnswer){
                 score++;
+                // trigger confetti
+                confetti({
+                    particleCount: 100,
+                    spread: 70,
+                    origin: { y: 0.6 }
+                });
             }
-            scoreText.innerText = `Score: ${score} / ${total}`;
+            scoreText.innerText = `Score: ${score} / ${total} (${model_name})`;
+            isAnswered = true;
         }
 
 
         const selectQuiz = (quiz) => {
-            console.log(quiz);
             quiz.querySelector('input').checked = !quiz.querySelector('input').checked;
+            quiz.classList.add('selected');
             console.log(quiz.querySelector('input').checked);
             document.querySelectorAll('.quiz').forEach(function(quiz){
                 if(quiz.querySelector('input').checked) {
-                    // add class active to the selected quiz
-                    quiz.classList.add('active');
                     onAnswer(quiz.querySelector('input').value);
-                    return;
                 }
-                quiz.classList.remove('active');
+                quiz.classList.add('active');
+                quiz.querySelector('input').checked = true;
+                // if(quiz.querySelector('input').checked) {
+                    // add class active to the selected quiz
+                    // quiz.classList.add('active');
+                    // onAnswer(quiz.querySelector('input').value);
+                    // return;
+                // }
+                // quiz.classList.remove('active');
             });
+            document.getElementById("typed").innerHTML = `<p style="color: green;">(点击任意键继续下一题)</p> ` + document.getElementById("typed").innerHTML;
         }
         
         // if quiz selected, will be checked and let div border have border color
@@ -274,14 +366,22 @@
         });
 
         // on keypress to select the answer
-        document.addEventListener('keypress', function(e){
-            if(e.key == 'a' || e.key == 'A'){
+        const onkeypress = (e) => {
+            console.log(e.key)
+            e.preventDefault();
+            if(isAnswered) {
+                console.log("generate new quiz")
+                generateNewQuiz();
+                return;
+            }
+
+            if(e.key == 'a' || e.key == 'A' || e.key == 'ArrowLeft'){
                 selectQuiz(document.querySelector('.quiz:has(input[value="A"])'));
-            }else if(e.key == 'b' || e.key == 'B'){
+            }else if(e.key == 'b' || e.key == 'B' || e.key == 'ArrowUp'){
                 selectQuiz(document.querySelector('.quiz:has(input[value="B"])'));
-            }else if(e.key == 'c' || e.key == 'C'){
+            }else if(e.key == 'c' || e.key == 'C' || e.key == 'ArrowDown'){
                 selectQuiz(document.querySelector('.quiz:has(input[value="C"])'));
-            }else if(e.key == 'd' || e.key == 'D'){
+            }else if(e.key == 'd' || e.key == 'D' || e.key == 'ArrowRight'){
                 selectQuiz(document.querySelector('.quiz:has(input[value="D"])'));
             }else if(e.key == 'p' || e.key == 'P'){
                 document.querySelectorAll('.quiz').forEach(function(quiz){
@@ -291,7 +391,9 @@
             }else if(e.key == 'g' || e.key == 'G'){
                 generateNewQuiz();
             }
-        });
+        }
+        document.addEventListener('keypress', onkeypress);
+        // document.addEventListener('keyup', onkeypress);
     </script>
 </body>
 </html>
