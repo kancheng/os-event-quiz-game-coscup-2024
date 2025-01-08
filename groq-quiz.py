@@ -3,11 +3,16 @@ from flask import Flask, request, jsonify, send_from_directory
 from groq import Groq
 from dotenv import load_dotenv
 
+from configs.env import setting_config
+
 load_dotenv()
 
 app = Flask(__name__, static_folder='./', static_url_path='')
-client = Groq()
-
+client = Groq(api_key=setting_config.API_KEY)
+# https://github.com/groq/groq-python
+# https://groq.com/
+# client = Groq()
+# http://localhost:5000/
 @app.route('/quiz')
 def groq():
     chat_completion = client.chat.completions.create(

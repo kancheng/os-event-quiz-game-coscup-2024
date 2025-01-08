@@ -216,9 +216,9 @@
 </head>
 <body>
     <div class="logo">
-        <img class="l1" src="./xxxx.svg" />
+        <img class="l1" src="./logo.svg" />
         <p class="p1">title</p>
-        <img class="l2" src="./xxxx.png" />
+        <img class="l2" src="./qrcode.svg" />
         <p class="p2">group link</p>
     </div>
     <!-- score bar -->
@@ -356,6 +356,7 @@
                 // quiz.classList.remove('active');
             });
             document.getElementById("typed").innerHTML = `<p style="color: green;">(点击任意键继续下一题)</p> ` + document.getElementById("typed").innerHTML;
+            score = 0;
         }
         
         // if quiz selected, will be checked and let div border have border color
